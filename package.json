@@ -1,0 +1,19 @@
+{
+  "name": "functional-jquery",
+  "version": "1.0.0",
+  "description": "This is an experimental library that attemps to modernise jQuery by introducting more",
+  "main": "index.html",
+  "scripts": {
+    "start": "npm run open",
+    "open": "concurrently \"http-server -a localhost -p 1234\" \"open http://localhost:1234\""
+  },
+  "dependencies": {
+    "jquery": "latest"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "http-server": "^14.1.1"
+  }
+}
