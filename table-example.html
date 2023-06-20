@@ -34,7 +34,7 @@
                     .fmap(doAddOrderArrow);
 
             } else {
-                const hoverListeners = () => {
+                const addCellEvents = () => {
                     $("#table td").on("mouseenter", function () {
                         $("#selection").text($(this).text());
                         $(this).css("background-color", "yellow");
@@ -64,9 +64,9 @@
                     $("#table th .symbol").text(" ");
                     $(this).find(".symbol").text(order ? " v" : " ^");
 
-                    hoverListeners();
+                    addCellEvents();
                 });
-                hoverListeners();
+                addCellEvents();
             }
         })
     </script>
