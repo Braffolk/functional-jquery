@@ -71,7 +71,6 @@ const $$FUNS = {
         return o;
     },
     strToUpperCase: function(o, it) {
-        console.log(String(it).toUpperCase());
         $$ITERATORS.set(o, String(it).toUpperCase());
         return o;
     },
@@ -144,7 +143,6 @@ const $$FUNS = {
         return o;
     },
     arrJoin(o, it, sep) {
-        console.log(it);
         $$ITERATORS.set(o, it.join(sep));
         return o;
     },
@@ -173,6 +171,7 @@ $$ = {
     reattach: (selector) => (o, it) => {
         $$FUNS.remove(o, it);
         $$FUNS.appendTo(o, it, selector);
+        return o;
     },
     prepend: () => $$FUNS.prepend,
     getHtml: () => $$FUNS.getHtml,
@@ -210,6 +209,9 @@ $$ = {
     },
     pokeValue: (initialValue, updateFunction) => {
         return new PokeValue(initialValue, updateFunction);
+    },
+    lazy: (selector) => {
+        return new LazyQuery(selector);
     }
 }
 
@@ -293,19 +295,28 @@ $.fn.fwhen = function (condition) {
     }
     return conditionObj;
 };
+$.fn.fextend = function (lazyQuery) {
+    lazyQuery.execute(this);
+    return this;
+}
 
-$.fn.fon = function(event) {
-    const lq = new LazyQuery(this);
+$.fn.fon = function(event, lazyQuery) {
+    if (lazyQuery === undefined) {
+        lazyQuery = new LazyQuery(this);
+    } else {
+        lazyQuery = lazyQuery.clone();
+    }
     $(this).on(event, function (){
-        lq.execute(this);
+        lazyQuery.execute(this);
     });
-    return lq;
+    return lazyQuery;
 }
 
 class PokeValue extends Function {
     constructor(initialValue, updateFunction) {
-        super("...args", "return this._bound._call.apply(this, args);");
-        this._bound = this.bind(this)
+        super('return arguments.callee._call.apply(arguments.callee, arguments)')
+        this._bound = this.bind(this);
+        this._bound.get = this.get.bind(this);
 
         this.value = initialValue;
         this.update = updateFunction;
@@ -317,6 +328,10 @@ class PokeValue extends Function {
             this.value = this.update(this.value);
         }
         this.called = true;
+        return this.value;
+    }
+
+    get() {
         return this.value;
     }
 }
@@ -341,17 +356,33 @@ class LazyQuery extends $.fn.constructor {
             const q = $(selector);
             return this.funStack.reduce((acc, [fun, args]) => acc[fun](...args), q)
         }
-        this.fon = function(event) {
-            return $(this.selector).fon(event);
+        this.fon = function(event, lazyQuery) {
+            if (lazyQuery) {
+                lazyQuery = lazyQuery.clone();
+            }
+            if (this.selector === undefined) {
+                this.funStack.push(["fon", [event, lazyQuery]]);
+                return this;
+            } else {
+                return $(this.selector).fon(event, lazyQuery);
+            }
         }
         this.call = function (o, it) {
-            $$ITERATORS.set(o, it);
-            const res = this.execute(o);
-            console.log(res);
-            return res;
+            if (this.selector === undefined) {
+                $$ITERATORS.set(o, it);
+                return this.execute(o);
+            } else {
+                return this.execute();
+            }
+        }
+        this.clone = function() {
+            const n = new LazyQuery(this.selector);
+            n.funStack = [...this.funStack];
+            return n;
         }
     }
 
+    clone() {}
     execute() {}
 }
 
