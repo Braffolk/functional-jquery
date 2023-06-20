@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+    <title>Modern Jquery</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js" integrity="sha512-3gJwYpMe3QewGELv8k/BX9vcqhryRdzRMxVfq6ngyWXwo03GFEzjsUm8Q7RZcHPHksttq7/GFoxjCVUjkjvPdw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="./modern-jquery.js"></script>
+    <script>
+        // Generate random data for a table with grouped columns
+        const tableData = [];
+        for (let i = 0; i < 100; i++) {
+            tableData.push({
+                id: i,
+                name: `Name ${i}`,
+                age: Math.floor(Math.random() * 100),
+                address: `Address ${i}`,
+                description: `Description ${i}`
+            });
+        };
+        tableData.sort(() => Math.random() - 0.5);
+
+        $(document).ready(function () {
+            // use modern jquery syntax to generate a table from tableData
+            const $header = $("<tr></tr>").appendTo("#table");
+            Object.keys(tableData[0]).forEach((key) => {
+                $header.append(`<th>${key}</th>`);
+            });
+            tableData.forEach((row) => {
+                const $row = $("<tr></tr>").appendTo("#table");
+                Object.values(row).forEach((value) => {
+                    $row.append(`<td>${value}</td>`);
+                });
+            });
+
+            const order = $$.pokeValue(false, o => !o)
+
+            $("#table th")
+                .fon("click")
+                .fmap($$.getIndex())
+                .fmap((o, index) => {
+                    $(`#table tr td:nth-child(${index + 1})`)
+                        .fsort(order(), $$.getText())
+                        .fmap($$.getParent(), $$.reattach("#table"));
+                });
+
+            $("#table td")
+                .fon("mouseenter")
+                    .css("background-color", "yellow")
+                    .fmap((o, val) => $("#selection").text($(o).text()))
+                .fon("mouseleave")
+                    .css("background-color", "white")
+        })
+    </script>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Modern jQuery</h1>
+<p id="selection">Nothing hovered!</p>
+<table id="table">
+</table>
+</body>
+</html>

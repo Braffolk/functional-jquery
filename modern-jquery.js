@@ -6,8 +6,24 @@
 const $$ITERATORS = new Map();
 
 const $$FUNS = {
+    this: function(o, it) {
+        $$ITERATORS.set(o, o);
+        return o;
+    },
     getText: function(o, it) {
         $$ITERATORS.set(o, $(o).text());
+        return o;
+    },
+    getParent: function(o, it) {
+        $$ITERATORS.set(o, $(o).parent());
+        return o;
+    },
+    remove: function(o, it) {
+        it.remove();
+        return o;
+    },
+    getIndex: function(o, it) {
+        $$ITERATORS.set(o, $(o).index());
         return o;
     },
     setText: function(o, it, val) {
@@ -24,6 +40,10 @@ const $$FUNS = {
     },
     append: function(o, it) {
         $(o).append(it);
+        return o;
+    },
+    appendTo: function(o, it, selector) {
+        $(selector).append(it);
         return o;
     },
     prepend: function(o, it) {
@@ -115,20 +135,45 @@ const $$FUNS = {
         $$ITERATORS.set(o, String(it).includes(searchString, position));
         return o;
     },
+    strAsElement(o, it, tag) {
+        $$ITERATORS.set(o, $(`<${tag}>${it}</${tag}>`));
+        return o;
+    },
     arrAt(o, it, index) {
         $$ITERATORS.set(o, it.at(index));
         return o;
     },
     arrJoin(o, it, sep) {
+        console.log(it);
         $$ITERATORS.set(o, it.join(sep));
         return o;
+    },
+    objKeys(o, it) {
+        $$ITERATORS.set(o, Object.keys(it));
+        return o;
+    },
+    objValues(o, it) {
+        $$ITERATORS.set(o, Object.values(it));
+        return o;
+    },
+    objEntries(o, it) {
+        $$ITERATORS.set(o, Object.entries(it));
     }
 }
 
 $$ = {
+    this: () => $$FUNS.this,
     getText: () => $$FUNS.getText,
+    getParent: () => $$FUNS.getParent,
+    remove: () => $$FUNS.remove,
+    getIndex: () => $$FUNS.getIndex,
     setText: (val) => (o, it) => $$FUNS.setText(o, it, val),
     append: () => $$FUNS.append,
+    appendTo: (selector) => (o, it) => $$FUNS.appendTo(o, it, selector),
+    reattach: (selector) => (o, it) => {
+        $$FUNS.remove(o, it);
+        $$FUNS.appendTo(o, it, selector);
+    },
     prepend: () => $$FUNS.prepend,
     getHtml: () => $$FUNS.getHtml,
     setHtml: (val) => (o, it) => $$FUNS.setHtml(o, it, val),
@@ -149,7 +194,8 @@ $$ = {
         replaceAll: (searchValue, replaceValue) => (o, it) => $$FUNS.strReplaceAll(o, it, searchValue, replaceValue),
         toUpperCase: () => $$FUNS.strToUpperCase,
         toLowerCase: () => $$FUNS.strToLowerCase,
-        split: (splitter) => (o, it) => $$FUNS.strSplit(o, it, splitter)
+        split: (splitter) => (o, it) => $$FUNS.strSplit(o, it, splitter),
+        asElement: (tag) => (o, it) => $$FUNS.strAsElement(o, it, tag)
     },
     arr: {
         at: (index) => (o, it) => $$FUNS.arrAt(o, it, index),
@@ -158,16 +204,18 @@ $$ = {
         join: (sep) => (o, it) => $$FUNS.arrJoin(o, it, sep)
     },
     obj: {
-
+        keys: () => $$FUNS.objKeys,
+        values: () => $$FUNS.objValues,
+        entries: () => $$FUNS.objEntries
     },
-    this: function() {
-        return $(this);
+    pokeValue: (initialValue, updateFunction) => {
+        return new PokeValue(initialValue, updateFunction);
     }
 }
 
 $.fn.fmapOne = function(fun) {
     return this.map(function() {
-        const ret = fun(this, $$ITERATORS.get(this));
+        const ret = fun.call(this, this, $$ITERATORS.get(this));
         if(ret !== this) {
             $$ITERATORS.set(this, ret);
         }
@@ -175,12 +223,34 @@ $.fn.fmapOne = function(fun) {
     });
 }
 
+
+
 $.fn.fmap = function(...functions) {
     return functions.reduce((acc, v) => acc.fmapOne(v), this);
 }
+$.fn.fsort = function(ascending, ...functions) {
+    const sign = ascending === false ? -1 : 1;
+    functions.reduce((acc, v) => acc.fmapOne(v), this);
+    return this.sort(function(a, b) {
+        const va = $$ITERATORS.get(a);
+        const vb = $$ITERATORS.get(b);
+        if (va > vb) {
+            return 1 * sign;
+        } else if(va < vb) {
+            return (-1) * sign;
+        } else {
+            return 0;
+        }
+    });
+}
+$.fn.fvalues = function() {
+    return $(this).map(function() {
+        return $$ITERATORS.get(this);
+    });
+}
 $.fn.ffilter = function (fn) {
     return $(this).filter(function () {
-        return fn(this, $$ITERATORS.get(this));
+        return fn.call(this, this, $$ITERATORS.get(this));
     });
 }
 $.fn.fwhen = function (condition) {
@@ -196,7 +266,7 @@ $.fn.fwhen = function (condition) {
             const funs = evalCondition ? conditionObj.fnThen : conditionObj.fnElse;
 
             funs.forEach((fun) => {
-                const ret = fun(o, $$ITERATORS.get(o));
+                const ret = fun.call(this, o, $$ITERATORS.get(o));
                 if(ret !== o) {
                     $$ITERATORS.set(o, ret);
                 }
@@ -232,6 +302,25 @@ $.fn.fon = function(event) {
     return lq;
 }
 
+class PokeValue extends Function {
+    constructor(initialValue, updateFunction) {
+        super("...args", "return this._bound._call.apply(this, args);");
+        this._bound = this.bind(this)
+
+        this.value = initialValue;
+        this.update = updateFunction;
+        this.called = false;
+        return this._bound;
+    }
+    _call(...args) {
+        if (this.called) {
+            this.value = this.update(this.value);
+        }
+        this.called = true;
+        return this.value;
+    }
+}
+
 class LazyQuery extends $.fn.constructor {
     constructor(selector) {
         super();
@@ -251,6 +340,15 @@ class LazyQuery extends $.fn.constructor {
             const selector = selectorOverride || this.selector;
             const q = $(selector);
             return this.funStack.reduce((acc, [fun, args]) => acc[fun](...args), q)
+        }
+        this.fon = function(event) {
+            return $(this.selector).fon(event);
+        }
+        this.call = function (o, it) {
+            $$ITERATORS.set(o, it);
+            const res = this.execute(o);
+            console.log(res);
+            return res;
         }
     }
 
