@@ -5,9 +5,40 @@ This is an experimental library that attemps to modernise jQuery by introducting
 README is a work in progress.
 
 ## Concepts
-- LazyQuery
-- Mapped values
-- PokeValues
+Functional jQuery attempts to simplify and modernise jQuery by introducing lazy queries, clean support for arrow functions, method shortcuts and the ability to map values along DOM elements.
+
+### Lazy queries
+Lazy queries are a way to defer execution of a jQuery query. This allows you to build up a query and execute it later. This is useful for example when you want to reuse a query multiple times, or when you want to execute a query after an event has happened.
+
+```javascript
+const $doShuffle = $$.lazy()
+    .fsort(true, $$.random())
+    .fmap($$.this(), $$.remove())
+    .fmap($$.getParent(), $$.append());
+
+$(".gameCards .shuffleButton")
+    .fon("click")
+    .fmap(o => $(o).parent().fmap($doShuffle));
+```
+
+### Arrow functions
+
+
+### PokeValues
+
+
+### Functions overview
+
+Functions:
+
+| Function | Description                                                                                                                                                                                                                                                                   |
+| --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `lazy` | Returns a lazy query, which is executed in the future                                                                                                                                                                                                                         |
+| `fmap` | Maps a function over a jQuery object. This method accepts arrow functions, where the first parameter is the DOM element and second is a special value, which is carried between functions. For example calling fmap($$.getText()) carries on the text of each matched element |
+| `fon` | Adds an event listener to a jQuery object. Any followup methods run in a LazyQuery, when the event triggers                                                                                                                                                                   |
+
+
+
 
 ## Examples
 Example table sorting. Both examples are short, hence uglier than standard, to show readability at short length.
@@ -76,4 +107,3 @@ $("#table th")
     )
     .fmap(doAddOrderArrow);
 ```
-
