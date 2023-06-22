@@ -13,8 +13,7 @@ Lazy queries are a way to defer execution of a jQuery query. This allows you to 
 ```javascript
 const $doShuffle = $$.lazy()
     .fsort(true, $$.random())
-    .fmap($$.this(), $$.remove())
-    .fmap($$.getParent(), $$.append());
+    .fmap($$.removeThis(), $$.getParent(), $$.appendThis());
 
 $(".gameCards .shuffleButton")
     .fon("click")
@@ -25,6 +24,49 @@ $(".gameCards .shuffleButton")
 
 
 ### PokeValues
+
+
+### Function naming conventions
+Since each query function allows modification of either the Iterable or updating This (DOM element), it is important to know which one is being modified. To resolve this, the naming of functions follows two main rules.
+
+
+Methods starting with get are used to get values from This and sets them as iterable.
+```
+$$.getText() - gets text from this, sets it to iterable
+$$.getAttr("data-id") - gets data-id attribute from this
+```
+
+Methods starting with set are used to set values to This, from iterable.
+```
+$$.setText() - sets text of this to current iterable
+$$.setAttr("data-id") - sets data-id attribute of this to current iterable
+```
+
+Methods that could modify either This or iterable, are named after the target (It or This).
+```
+$$.appendIt() - appends iterable to this
+$$.appendItTo(selector) - appends iterable to selector
+$$.appendThis() - appends this to iterable
+$$.appendThisTo(selector) - appends this to selector
+$$.reattachThis() - reattaches this to iterable
+$$.reattachThisTo(selector) - reattaches this to selector
+$$.removeThis() - removes this from DOM
+$$.removeIt() - removes iterable from DOM
+```
+
+So, to uppercase the text of an element and move it to #list, you would do:
+```javascript
+$("selector").fmap(
+    $$.getText(),
+    $$.str.toUpperCase(),
+    $$.setText(),
+    $$.reattachThisTo("#list")
+)
+````
+
+
+
+
 
 
 ### Functions overview

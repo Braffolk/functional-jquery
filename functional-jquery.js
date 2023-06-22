@@ -10,6 +10,10 @@ const $$FUNS = {
         $$ITERATORS.set(o, o);
         return o;
     },
+    random: function(o, it) {
+        $$ITERATORS.set(o, Math.random());
+        return o;
+    },
     getText: function(o, it) {
         $$ITERATORS.set(o, $(o).text());
         return o;
@@ -18,8 +22,12 @@ const $$FUNS = {
         $$ITERATORS.set(o, $(o).parent());
         return o;
     },
-    remove: function(o, it) {
-        it.remove();
+    removeThis: function(o, it) {
+        $(o).remove();
+        return o;
+    },
+    removeIt: function(o, it) {
+        $(it).remove();
         return o;
     },
     getIndex: function(o, it) {
@@ -38,16 +46,20 @@ const $$FUNS = {
         $(o).html(val || it);
         return o;
     },
-    append: function(o, it) {
+    appendThis: function(o, it) {
         $(o).append(it);
         return o;
     },
-    appendTo: function(o, it, selector) {
+    appendIt: function(o, it) {
+        $(it).append(o);
+        return o;
+    },
+    appendItTo: function(o, it, selector) {
         $(selector).append(it);
         return o;
     },
-    prepend: function(o, it) {
-        $(o).append(it);
+    prependThis: function(o, it) {
+        $(o).prepend(it);
         return o;
     },
     strLength: function(o, it) {
@@ -163,19 +175,28 @@ $$ = {
     this: () => $$FUNS.this,
     getText: () => $$FUNS.getText,
     getParent: () => $$FUNS.getParent,
-    remove: () => $$FUNS.remove,
+    removeThis: () => $$FUNS.removeThis,
+    removeIt: () => $$FUNS.removeIt,
     getIndex: () => $$FUNS.getIndex,
     setText: (val) => (o, it) => $$FUNS.setText(o, it, val),
-    append: () => $$FUNS.append,
-    appendTo: (selector) => (o, it) => $$FUNS.appendTo(o, it, selector),
-    reattach: (selector) => (o, it) => {
-        $$FUNS.remove(o, it);
-        $$FUNS.appendTo(o, it, selector);
+    appendIt: () => $$FUNS.appendIt,
+    appendThis: () => $$FUNS.appendThis,
+    appendItTo: (selector) => (o, it) => $$FUNS.appendItTo(o, it, selector),
+    appendThisTo: (selector) => (o, it) => $$FUNS.appendThisTo(o, it, selector),
+    reattachThis: (selector) => (o, it) => {
+        $$FUNS.removeThis(o, it);
+        $$FUNS.appendThisTo(o, it, selector);
+        return o;
+    },
+    reattachIt: (selector) => (o, it) => {
+        $$FUNS.removeIt(o, it);
+        $$FUNS.appendItTo(o, it, selector);
         return o;
     },
     prepend: () => $$FUNS.prepend,
     getHtml: () => $$FUNS.getHtml,
     setHtml: (val) => (o, it) => $$FUNS.setHtml(o, it, val),
+    random: () => $$FUNS.random,
     str: {
         length: () => $$FUNS.strLength,
         at: (index) => (o, it) => $$FUNS.strAt(o, it, index),
